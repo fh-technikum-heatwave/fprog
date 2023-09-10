@@ -4,17 +4,27 @@
 
 typedef std::complex<double> complex;
 
+double calculateSqaureHelper(const int i, const double e, const double dummy)
+{
+  if (i < dummy)
+  {
+    return calculateSqaureHelper(i + 1, e + dummy, dummy);
+  }
+
+  return e;
+}
+
 double square(const double e)
 {
-  // double dummy = e;
-  // double dummy2 = e;
-  // for (int i = 1; i < dummy2; i++)
-  // {
-  //   e = e + dummy;
-  //   std::cout << "i: " << i << " dummy:" << dummy << " e:" << e << std::endl;
-  // }
-  // std::cout << "square:" << e << std::endl;
-  return e * e;
+  // int dummy=e;
+  // int dummy2=e;
+  // for (int i=1;i<dummy2;i++)
+  // 	{
+  // 		e=e+dummy;
+  // 		cout << "i: " << i << " dummy:" << dummy << " e:" << e << endl;
+  // 	}
+  // cout << "square:" << e << endl;
+  return calculateSqaureHelper(1, e, e);
 }
 
 inline float squareroot(const float number)
@@ -27,24 +37,27 @@ inline float squareroot(const float number)
   Conv conv;
   conv.f = number;
   conv.i = 0x5f3759df - (conv.i >> 1);
-  conv.f *= 1.5F - (number * 0.5F * conv.f * conv.f);
-  return 1 / conv.f;
+  // conv.f *= 1.5F - (number * 0.5F * conv.f * conv.f);
+  // return 1/ conv.f;
+  return 1 / (conv.f * (1.5F - (number * 0.5F * conv.f * conv.f)));
 }
 
-std::pair<complex, complex> solve_quadratic_equation(double a, double b, double c)
+std::pair<complex, complex>
+solve_quadratic_equation(const double a, const double b, const double c)
 {
-  b /= a;
-  c /= a;
-  double discriminant = square(b) - 4 * c;
+
+  double newB = b / a;
+  double newC = c / a;
+  double discriminant = square(newB) - 4 * newC;
   if (discriminant < 0)
-    return std::make_pair(complex(-b / 2, squareroot(-discriminant) / 2),
-                          complex(-b / 2, -squareroot(-discriminant) / 2));
+    return std::make_pair(complex(-newB / 2, squareroot(-discriminant) / 2),
+                          complex(-newB / 2, -squareroot(-discriminant) / 2));
 
   double root = std::sqrt(discriminant);
-  double solution1 = (b > 0) ? (-b - root) / 2
-                             : (-b + root) / 2;
+  double solution1 = (newB > 0) ? (-newB - root) / 2
+                             : (-newB + root) / 2;
 
-  return std::make_pair(solution1, c / solution1);
+  return std::make_pair(solution1, newC / solution1);
 }
 
 int main()
