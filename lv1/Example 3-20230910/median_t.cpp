@@ -25,27 +25,28 @@ double silly_square(const double x)
 double square_root_helper(const int i, const int max_iterations, const double epsilon, const double x,
                           const double low, const double high)
 {
-    if (i < max_iterations)
+
+    double mid = (low + high) / 2.0;
+    double mid_square = mid * mid;
+    if (i >= max_iterations)
     {
-        double mid = (low + high) / 2.0;
-        double mid_square = mid * mid;
-
-        if (mid_square > x)
-        {
-            return square_root_helper(i + 1, max_iterations, epsilon, x, low, mid);
-        }
-        else if (mid_square < x)
-        {
-            return square_root_helper(i + 1, max_iterations, epsilon, x, mid, high);
-        }
-
-        if (high - low < epsilon)
-        {
-            return mid;
-        }
+        return mid;
     }
 
-    return high;
+    if (high - low < epsilon)
+    {
+        return mid;
+    }
+    else if (mid_square > x)
+    {
+        return square_root_helper(i + 1, max_iterations, epsilon, x, low, mid);
+    }
+    else if (mid_square < x)
+    {
+        return square_root_helper(i + 1, max_iterations, epsilon, x, mid, high);
+    }
+
+    return mid;
 }
 
 // Helper function to calculate square root without using std::sqrt()
@@ -85,7 +86,6 @@ double square_root(const double x, const double epsilon = 1e-10, const int max_i
     // }
 
     return square_root_helper(0, max_iterations, epsilon, x, 0, x);
-    
 
     // return mid;
 }
