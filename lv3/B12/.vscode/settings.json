@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "map": "cpp",
+        "system_error": "cpp",
+        "thread": "cpp",
+        "type_traits": "cpp",
+        "vector": "cpp",
+        "xmemory": "cpp",
+        "xstddef": "cpp",
+        "xstring": "cpp",
+        "cstdlib": "cpp",
+        "algorithm": "cpp"
+    }
+}
