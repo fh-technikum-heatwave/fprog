@@ -292,7 +292,6 @@ TEST_CASE("Correct Tokens played - 0 difference")
         {'X', 'O', ' '},
         {'O', ' ', 'O'}};
 
-
     CHECK_EQ(true, valid_plays(board));
 }
 
@@ -304,10 +303,49 @@ TEST_CASE("Invalid Tokens played")
         {'X', ' ', ' '},
         {'O', ' ', ' '}};
 
-   
-
     CHECK_EQ(false, valid_plays(board));
 }
+
+// 2 und 3
+
+auto isValidToken = [](const auto token)
+{
+    return token == 'X' || token == 'O' || token == ' ';
+};
+
+auto isValidBoard = [](const auto &board)
+{
+    return all_of_collection(board, [](const auto &row) {
+        return all_of_collection(row, isValidToken);
+    });
+};
+
+
+TEST_CASE("Valid board")
+{
+
+    Board board{
+        {'X', ' ', 'X'},
+        {'X', ' ', ' '},
+        {'O', ' ', ' '},
+    };
+
+    CHECK_EQ(true, isValidBoard(board));
+}
+
+TEST_CASE("Invalid board")
+{
+
+    Board board{
+        {'X', ' ', 'X'},
+        {'X', ' ', ' '},
+        {'O', 'F', ' '},
+    };
+
+    CHECK_EQ(false, isValidBoard(board));
+}
+
+
 
 // board.size == 3 überprüft ob das Board 3 Zeilen hat
 //  all_of(board.begin(), board.end(),
@@ -315,7 +353,7 @@ TEST_CASE("Invalid Tokens played")
 
 bool isValidDimensions(const Board &board)
 {
-    return board.size() == 3 && all_of(board.begin(), board.end(), [](const Line &line)
+    return board.size() == 3 && all_of_collection(board, [](const Line &line)
                                        { return line.size() == 3; });
 }
 
@@ -328,11 +366,8 @@ TEST_CASE("Invalid Lines")
         {'O', ' ', ' '},
         {'O', ' ', ' '}};
 
-   
-
     CHECK_EQ(false, isValidDimensions(board));
 }
-
 
 TEST_CASE("Invalid Colums")
 {
@@ -340,9 +375,8 @@ TEST_CASE("Invalid Colums")
     Board board{
         {'X', ' ', 'X', ' '},
         {'X', ' ', ' '},
-        {'O', ' ', ' '},};
-
-   
+        {'O', ' ', ' '},
+    };
 
     CHECK_EQ(false, isValidDimensions(board));
 }
@@ -353,11 +387,11 @@ TEST_CASE("Valid Board")
     Board board{
         {'X', ' ', 'X'},
         {'X', ' ', ' '},
-        {'O', ' ', ' '},};
+        {'O', ' ', ' '},
+    };
 
     CHECK_EQ(true, isValidDimensions(board));
 }
-
 
 //=====================================================
 
