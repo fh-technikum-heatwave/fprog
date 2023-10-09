@@ -275,6 +275,11 @@ auto valid_plays = [](const auto &board)
     return abs(sum_of_token_in_line(board, 'X') - sum_of_token_in_line(board, 'O')) <= 1;
 };
 
+auto invalid_played = [](const auto &board)
+{
+    return abs(sum_of_token_in_line(board, 'X') - sum_of_token_in_line(board, 'O')) > 1;
+};
+
 TEST_CASE("Correct Tokens played - 1 difference")
 {
 
@@ -603,6 +608,30 @@ TEST_CASE("Range")
 
 // Property Based Testing
 
+using Generator = std::function<Board()>;
+
+using Property = std::function<bool(const Board)>;
+
+auto check_property = [](const Generator generator, Property property, size_t size = 100) -> bool
+{
+    bool returnValue = true;
+    for (size_t i = 0; i < size; i++)
+    {
+        auto board = generator(); // Zufälliges Board generieren
+
+        bool propertyHolds = property(board);
+
+        CHECK(propertyHolds);
+
+        if (!propertyHolds)
+        {
+            returnValue = false;
+        }
+    }
+
+    return returnValue;
+};
+
 // 1. Generator
 auto generateRandomTicTacToeBoard = []() -> Board
 {
@@ -642,30 +671,6 @@ auto generateRandomTicTacToeBoard = []() -> Board
     return board;
 };
 
-using Generator = std::function<Board()>;
-
-using Property = std::function<bool(const Board)>;
-
-auto check_property = [](const Generator generator, Property property) -> bool
-{
-    bool returnValue = true;
-    for (size_t i = 0; i < 100; i++)
-    {
-        auto board = generator(); // Zufälliges Board generieren
-
-        bool propertyHolds = property(board);
-
-        CHECK(propertyHolds);
-
-        if (!propertyHolds)
-        {
-            returnValue = false;
-        }
-    }
-
-    return returnValue;
-};
-
 auto property_fully_filled_board = [](const Board &board)
 {
     return all_of(board.begin(), board.end(), [](const vector<char> &row)
@@ -695,24 +700,25 @@ auto generateErroneousBoard = []() -> Board
     return board;
 };
 
-auto property_has_erroneous_token = [](const Board &board) -> bool
+auto property_has_erroneous_token = [](const Board board) -> bool
 {
     for (const auto &row : board)
     {
         for (char cell : row)
         {
-            if (cell == 'A')
+            if (cell != 'X' || cell != 'O')
             {
                 return true;
             }
         }
     }
-    return false; // Das Zeichen 'F' wurde nicht gefunden
+    return false;
 };
 
 TEST_CASE("2. Generator Test")
 {
     check_property(generateErroneousBoard, property_has_erroneous_token);
+    check_property(generateErroneousBoard, property_fully_filled_board);
 }
 
 // 3. Generator
@@ -791,49 +797,50 @@ TEST_CASE("3. Generator Test")
 {
     check_property(partially_filled_board_correct, property_has_empty_cell);
     check_property(partially_filled_board_correct, property_only_valid_chars);
+    check_property(partially_filled_board_correct, isValidDimensions);
+    check_property(partially_filled_board_correct, isValidBoard);
 }
 
 // 4. Generator
-
 auto generateBoardWithInvalidMoves = []() -> Board
 {
-    Board board(3, std::vector<char>(3, ' '));
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<int> dist(0, 2);
+    random_device rd;
+    mt19937 gen(rd());
+
+    Board board(3, Line(3, ' '));
 
     int xCount = 0;
     int oCount = 0;
 
-    char currentPlayer = 'X'; // Start with 'X'
-
-    while (xCount + oCount < 8)
+    // Ensure there is an error in token distribution (minimum difference of 2)
+    while (abs(xCount - oCount) <= 1)
     {
-        int row = dist(gen);
-        int col = dist(gen);
+        xCount = uniform_int_distribution<int>(0, 4)(gen);
+        oCount = uniform_int_distribution<int>(0, 4)(gen);
+    }
 
-        if (board[row][col] == ' ')
+    // Place 'X' tokens
+    for (int i = 0; i < xCount; ++i)
+    {
+        int row, col;
+        do
         {
-            // Check if the current player is making too many consecutive moves
-            if ((currentPlayer == 'X' && xCount >= 3) || (currentPlayer == 'O' && oCount >= 3))
-            {
-                // Switch to the other player
-                currentPlayer = (currentPlayer == 'X') ? 'O' : 'X';
-            }
+            row = uniform_int_distribution<int>(0, 2)(gen);
+            col = uniform_int_distribution<int>(0, 2)(gen);
+        } while (board[row][col] != ' ');
+        board[row][col] = 'X';
+    }
 
-            board[row][col] = currentPlayer;
-
-            if (currentPlayer == 'X')
-            {
-                xCount++;
-            }
-            else
-            {
-                oCount++;
-            }
-            // Switch to the other player
-            currentPlayer = (currentPlayer == 'X') ? 'O' : 'X';
-        }
+    // Place 'O' tokens
+    for (int i = 0; i < oCount; ++i)
+    {
+        int row, col;
+        do
+        {
+            row = uniform_int_distribution<int>(0, 2)(gen);
+            col = uniform_int_distribution<int>(0, 2)(gen);
+        } while (board[row][col] != ' ');
+        board[row][col] = 'O';
     }
 
     return board;
@@ -841,25 +848,7 @@ auto generateBoardWithInvalidMoves = []() -> Board
 
 auto property_invalid_moves(const Board &board)
 {
-    int xCount = 0;
-    int oCount = 0;
-
-    for (const auto &row : board)
-    {
-        for (char cell : row)
-        {
-            if (cell == 'X')
-            {
-                xCount++;
-            }
-            else if (cell == 'O')
-            {
-                oCount++;
-            }
-        }
-    }
-
-    return abs(xCount - oCount) > 1;
+    return invalid_played(board);
 }
 
 TEST_CASE("4. Generator Test")
@@ -870,99 +859,90 @@ TEST_CASE("4. Generator Test")
 
 // 5. Generator
 
-int chooseRandomWinningLine()
+// auto generateRandomWinningBoard = []() -> Board
+// {
+//     Board board(3, Line(3, ' '));
+//     random_device rd;
+//     mt19937 gen(rd());
+
+//     uniform_int_distribution<int> winningPlayer(0, 1);
+//     char winner = (winningPlayer(gen) == 0) ? 'X' : 'O';
+
+//     vector<pair<int, int>> availablePositions;  // Vector welcehr speichert welche Positionen noch spielbar sind
+
+//     for (int i = 0; i < 3; ++i)  // Diese doppelte Schleife dient dazu um alle Möglichen Positionen in den vector hinzuzufügen
+//     {
+//         for (int j = 0; j < 3; ++j)
+//         {
+//             availablePositions.push_back(make_pair(i, j));
+//         }
+//     }
+
+//     shuffle(availablePositions.begin(), availablePositions.end(), gen); // Zufällige Reihenfolge wird festgelegt, sprich welcher Move wan dran ist.
+
+//     //Bestimmt welche Linie gewinnt
+//     uniform_int_distribution<int> winningLineType(0, 2);
+//     int lineType = winningLineType(gen);
+
+//     int countX = 0;
+//     int countO = 0;
+
+//     // Fill the board with valid moves
+//     for (int move = 0; move < 9; ++move)
+//     {
+//         int row = availablePositions[move].first;
+//         int col = availablePositions[move].second;
+
+//         if (countX == 5 && winner == 'X')
+//         {
+//             board[row][col] = 'O';
+//             countO++;
+//         }
+//         else if (countO == 5 && winner == 'O')
+//         {
+//             board[row][col] = 'X';
+//             countX++;
+//         }
+//         else
+//         {
+//             board[row][col] = winner;
+//             if (winner == 'X')
+//             {
+//                 countX++;
+//             }
+//             else
+//             {
+//                 countO++;
+//             }
+//         }
+
+//         // Check if the current player wins
+//         if (move >= 4)
+//         {
+//             // Check rows, columns, and diagonals
+//             if ((lineType == 0 && board[row][0] == winner && board[row][1] == winner && board[row][2] == winner) ||
+//                 (lineType == 1 && board[0][col] == winner && board[1][col] == winner && board[2][col] == winner) ||
+//                 (lineType == 2 && ((row == 0 && col == 0 && board[0][0] == winner && board[1][1] == winner && board[2][2] == winner) ||
+//                                    (row == 0 && col == 2 && board[0][2] == winner && board[1][1] == winner && board[2][0] == winner))))
+//             {
+//                 return board; // Player wins, return the board
+//             }
+//         }
+
+//         // Switch to the other player
+//         winner = (winner == 'X') ? 'O' : 'X';
+//     }
+
+//     return board; // If no winner, return the current state of the board
+// };
+
+auto generateOnlyWinner = []()
 {
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_int_distribution<int> lineType(0, 2);
-    return lineType(gen); // Gibt 0 für Reihe, 1 für Spalte und 2 für Diagonale zurück
-}
-
-Board generateRandomWinningBoard()
-{
-
-    Board board(3, Line(3, ' '));
-    random_device rd;
-    mt19937 gen(rd());
-
-    // Determine the winning player (either 'X' or 'O') randomly
-    uniform_int_distribution<int> winningPlayer(0, 1);
-    char winner = (winningPlayer(gen) == 0) ? 'X' : 'O';
-
-    // Create a vector of all available positions on the board
-    vector<pair<int, int>> availablePositions;
-    for (int i = 0; i < 3; ++i)
+    while (true)
     {
-        for (int j = 0; j < 3; ++j)
+        auto board = generateRandomTicTacToeBoard();
+        if (xWins(board) || oWins(board))
         {
-            availablePositions.push_back(make_pair(i, j));
-        }
-    }
-
-    // Shuffle the available positions randomly
-    shuffle(availablePositions.begin(), availablePositions.end(), gen);
-
-    // Determine a random winning line (row, column, or diagonal)
-    uniform_int_distribution<int> winningLineType(0, 2);
-    int lineType = winningLineType(gen);
-
-    // Initialize counters for 'X' and 'O'
-    int countX = 0;
-    int countO = 0;
-
-    // Fill the board with valid moves
-    for (int move = 0; move < 9; ++move)
-    {
-        int row = availablePositions[move].first;
-        int col = availablePositions[move].second;
-
-        if (countX == 5 && winner == 'X')
-        {
-            board[row][col] = 'O';
-            countO++;
-        }
-        else if (countO == 5 && winner == 'O')
-        {
-            board[row][col] = 'X';
-            countX++;
-        }
-        else
-        {
-            board[row][col] = winner;
-            if (winner == 'X')
-            {
-                countX++;
-            }
-            else
-            {
-                countO++;
-            }
-        }
-
-        // Check if the current player wins
-        if (move >= 4)
-        {
-            // Check rows, columns, and diagonals
-            if ((lineType == 0 && board[row][0] == winner && board[row][1] == winner && board[row][2] == winner) ||
-                (lineType == 1 && board[0][col] == winner && board[1][col] == winner && board[2][col] == winner) ||
-                (lineType == 2 && ((row == 0 && col == 0 && board[0][0] == winner && board[1][1] == winner && board[2][2] == winner) ||
-                                   (row == 0 && col == 2 && board[0][2] == winner && board[1][1] == winner && board[2][0] == winner))))
-            {
-                return board; // Player wins, return the board
-            }
-        }
-
-        // Switch to the other player
-        winner = (winner == 'X') ? 'O' : 'X';
-    }
-
-    return board; // If no winner, return the current state of the board
-};
-
-auto generateOnlyWinner = [](){
-    while(true){
-        auto board = generateRandomWinningBoard();
-        if(xWins(board) || oWins(board)){
             return board;
         }
     }
@@ -976,4 +956,6 @@ auto property_hasWinner = [](const Board &board)
 TEST_CASE("5. Generator Test")
 {
     check_property(generateOnlyWinner, property_hasWinner);
+    check_property(generateOnlyWinner, valid_plays);
+    check_property(generateOnlyWinner, property_fully_filled_board);
 }

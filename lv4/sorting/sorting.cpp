@@ -154,9 +154,9 @@ TEST_CASE("Insertion Sort - not changing input Value")
 
 // Task 3
 template <typename T>
-vector<T> bubbleSort(const std::vector<T> list)
+std::vector<T> bubbleSort(const std::vector<T> list)
 {
-    vector<T> sortedArray = list;
+    std::vector<T> sortedArray = list;
     bool swapped;
 
     do
@@ -252,7 +252,7 @@ TEST_CASE("Selection Sort - not changing input Value")
 
 // Task 5
 
-std::function<std::vector<int>(std::vector<int>)> quicksort = [](const std::vector<int> inputArray)
+std::function<std::vector<int>(std::vector<int>)> quicksort = [](const std::vector<int> inputArray) -> std::vector<int>
 {
     if (inputArray.size() <= 1)
     {
@@ -262,8 +262,8 @@ std::function<std::vector<int>(std::vector<int>)> quicksort = [](const std::vect
     int pivotIndex = inputArray.size() / 2;
     int pivot = inputArray[pivotIndex];
 
-    vector<int> left;
-    vector<int> right;
+    std::vector<int> left;
+    std::vector<int> right;
 
     for (size_t i = 0; i < inputArray.size(); i++)
     {
@@ -281,10 +281,14 @@ std::function<std::vector<int>(std::vector<int>)> quicksort = [](const std::vect
         }
     }
 
-    vector<int> sortedLeft = quicksort(left);
-    vector<int> sortedRight = quicksort(right);
+    // Use recursion to sort left and right partitions
+    std::vector<int> sortedLeft = quicksort(left);
+    std::vector<int> sortedRight = quicksort(right);
 
-    vector<int> sortedArray = sortedLeft;
+    // Combine sorted partitions with pivot
+    std::vector<int> sortedArray;
+    sortedArray.reserve(sortedLeft.size() + 1 + sortedRight.size());
+    sortedArray.insert(sortedArray.end(), sortedLeft.begin(), sortedLeft.end());
     sortedArray.push_back(pivot);
     sortedArray.insert(sortedArray.end(), sortedRight.begin(), sortedRight.end());
 
