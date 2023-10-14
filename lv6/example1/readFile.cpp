@@ -4,6 +4,7 @@
 #include <functional>
 #include <optional>
 
+
 // Lambda function to read integers from a file
 auto readIntegersFromFile = [](const std::string &filename) -> std::optional<std::vector<int>>
 {

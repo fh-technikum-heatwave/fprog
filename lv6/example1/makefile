@@ -3,7 +3,7 @@ CXX       = clang++
 CXXFLAGS  = -g -std=c++17 -Wall
 
 $(PROGRAM): readFile.cpp
-	$(CXX) readFile.cpp -o $(PROGRAM)
+	$(CXX) $(CXXFLAGS) readFile.cpp -o $(PROGRAM)
 
 .PHONY: clean 
 
