@@ -4,9 +4,11 @@
 #include <functional>
 #include <optional>
 
+template <typename T>
+using Maybe = std::optional<T>;
 
 // Lambda function to read integers from a file
-auto readIntegersFromFile = [](const std::string &filename) -> std::optional<std::vector<int>>
+auto readIntegersFromFile = [](const std::string &filename) -> Maybe<std::vector<int>>
 {
   std::ifstream file(filename);
   if (file.is_open())
@@ -18,7 +20,7 @@ auto readIntegersFromFile = [](const std::string &filename) -> std::optional<std
       integers.push_back(num);
     }
     file.close();
-    return integers;
+    return Maybe<std::vector<int>>(integers);
   }
   else
   {
@@ -27,7 +29,7 @@ auto readIntegersFromFile = [](const std::string &filename) -> std::optional<std
 };
 
 // Immutable function to sum integers
-auto sumIntegers = [](const std::vector<int> &integers) -> std::optional<int>
+auto sumIntegers = [](const std::vector<int> &integers) -> Maybe<int>
 {
   int sum = 0;
   for (int num : integers)

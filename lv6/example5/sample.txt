@@ -1,0 +1,6 @@
+This is a sample file with some non-ASCII characters:
+1. Café (with an accented "e").
+2. Häagen-Dazs (with non-ASCII characters in the brand name).
+3. Emoji: 😀 (a non-ASCII character).
+
+© Copyright 2023, Your Company.
