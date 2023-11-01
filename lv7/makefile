@@ -1,5 +1,5 @@
 PROGRAM   = sorting
-CXX       = clang++
+CXX       = g++
 CXXFLAGS  = -g -std=c++20 -Wall
 
 $(PROGRAM): sorting.cpp

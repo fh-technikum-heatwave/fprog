@@ -10,9 +10,12 @@
 #include <algorithm>
 #include <cmath>
 #include <functional>
+#include <ranges> // Include the Ranges library
 
 using namespace std;
 using namespace std::placeholders;
+
+// namespace sr = std::ranges
 
 // extra Methodsfunctional
 auto concatenate = [](const auto &first, const auto &second)
@@ -22,56 +25,41 @@ auto concatenate = [](const auto &first, const auto &second)
     return result;
 };
 
-auto distributeToBuckets = [](const int &value, const double &range) -> int
+auto distributeToBuckets = [](int value, double range)
 {
     return static_cast<int>(value / range);
 };
 
-// Task 1
-// insertionSort for bucketSort
-auto insertionSort = [](const std::vector<int> input) -> std::vector<int>
+auto bucketSort = [](const std::vector<int> &input, int numBuckets)
 {
-    std::vector<int> result = input;
-    int n = result.size();
-    for (int i = 1; i < n; ++i)
+    if (input.empty() || numBuckets <= 0)
     {
-        int key = result[i];
-        int j = i - 1;
-        while (j >= 0 && result[j] > key)
-        {
-            result[j + 1] = result[j];
-            j--;
-        }
-        result[j + 1] = key;
+        return std::vector<int>{};
     }
-    return result; // Return the sorted vector
-};
 
-auto bucketSort = [](const auto array, const auto k)
-{
-    vector<vector<int>> buckets(k);
+    int max_val = *std::ranges::max_element(input);
+    double range = (max_val + 1.0) / static_cast<double>(numBuckets);
 
-    // Find the maximum value in the array
-    int max_val = *max_element(array.begin(), array.end());
+    std::vector<std::vector<int>> buckets(numBuckets);
 
-    // Calculate the range for each bucket
-    double range = (max_val + 1) / static_cast<double>(k);
-
-    auto newArray = array;
-
-    for (const auto &value : newArray)
+    for (int value : input)
     {
         int bucket_idx = distributeToBuckets(value, range);
         buckets[bucket_idx].push_back(value);
     }
 
-    // Sort each bucket using insertion sort
-    for (auto &bucket : buckets)
-    {
-        bucket = insertionSort(bucket);
-    }
+    auto sortedBuckets = buckets | std::ranges::views::transform([](auto &bucket) -> std::vector<int>
+                                                                 {
+    std::ranges::sort(bucket);
+    return bucket; });
 
-    vector<int> result = std::accumulate(buckets.begin(), buckets.end(), vector<int>(), concatenate);
+    auto combinedBuckets = std::ranges::views::transform(sortedBuckets, [](const auto &bucket) -> std::vector<int>
+                                                         { return bucket; });
+    std::vector<int> result;
+    for (const auto &bucket : combinedBuckets)
+    {
+        result.insert(result.end(), bucket.begin(), bucket.end());
+    }
 
     return result;
 };
@@ -267,7 +255,7 @@ std::function<std::vector<int>(std::vector<int>)> quicksort = [](const std::vect
 
     for (size_t i = 0; i < inputArray.size(); i++)
     {
-        if (i == pivotIndex)
+        if (static_cast< int>(i) == pivotIndex)
         {
             continue;
         }
