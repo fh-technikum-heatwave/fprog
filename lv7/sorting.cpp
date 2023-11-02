@@ -96,7 +96,7 @@ std::vector<int> insertionSortRecursive(const std::vector<int> &input)
     auto insertSorted = [](const std::vector<int> sorted, int value)
     {
         std::vector<int> result = sorted;
-        auto it = std::upper_bound(result.begin(), result.end(), value);
+        auto it = std::ranges::upper_bound(result.begin(), result.end(), value);
         result.insert(it, value);
         return result;
     };
@@ -114,6 +114,7 @@ std::vector<int> insertionSortRecursive(const std::vector<int> &input)
         int firstElement = input[0];
         return insertSorted(tail, firstElement);
     }
+
 }
 
 TEST_CASE("Insertion Sort")
@@ -155,7 +156,7 @@ std::vector<T> bubbleSort(const std::vector<T> list)
         {
             if (sortedArray[i - 1] > sortedArray[i])
             {
-                std::swap(sortedArray[i - 1], sortedArray[i]);
+                std::ranges::swap(sortedArray[i - 1], sortedArray[i]);
                 swapped = true;
             }
         }
@@ -193,23 +194,18 @@ auto selectionSort = [](const std::vector<int> inputArray) -> std::vector<int>
 {
     std::vector<int> sortedArray = inputArray;
 
-    for (size_t i = 0; i < sortedArray.size() - 1; i++)
-    {
-        size_t jMin = i;
+   
 
-        for (size_t j = i + 1; j < sortedArray.size(); j++)
-        {
-            if (sortedArray[j] < sortedArray[jMin])
-            {
-                jMin = j;
-            }
-        }
+for (auto it = sortedArray.begin(); it != sortedArray.end() - 1; ++it) {
+    // Find the minimum element in the range [it, sortedArray.end()).
+    auto minIt = std::ranges::min_element(it, sortedArray.end());
 
-        if (jMin != i)
-        {
-            std::swap(sortedArray[i], sortedArray[jMin]);
-        }
+    // If the minimum element is not the current element, swap them.
+    if (minIt != it) {
+      std::ranges::swap(*it, *minIt);
     }
+  }
+
 
     return sortedArray;
 };
